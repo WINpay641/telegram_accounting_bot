@@ -1,1 +1,1 @@
-worker: python3 main.py
+web: node server.js
