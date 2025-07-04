@@ -4,7 +4,7 @@ from database import save_message
 import os
 
 bot = Bot(token=os.getenv("BOT_TOKEN"))
-dp = Dispatcher()
+dp = Dispatcher(bot)
 
 async def handle_update(data):
     update = types.Update(**data)
