@@ -16,5 +16,5 @@ async def save_message(message):
             "timestamp": message.date.isoformat()
         })
     else:
-        # 如果没有数据库，跳过保存
+        # 无数据库时跳过保存
         pass
