@@ -11,4 +11,4 @@ async def telegram_webhook(request: Request):
 
 @app.get("/")
 async def root():
-    feturn{"message":"Telrgram accounting bot is running."}
+    return {"message": "Telegram accounting bot is running."}
