@@ -4,11 +4,16 @@ import asyncio
 from flask import Flask
 from flask_cors import CORS
 from telegram.ext import ApplicationBuilder, MessageHandler, filters
+from dotenv import load_dotenv
+import os
 from config import Config
 from transaction_manager import handle_bill
 from user_manager import welcome_new_member, handle_message
 from api_routes import register_api_routes
 from utils import setup_logging
+
+# 加载环境变量
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
