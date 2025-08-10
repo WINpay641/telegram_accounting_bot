@@ -40,8 +40,8 @@ def health():
     """健康检查端点"""
     return "OK", 200
 
-async def start_bot():
-    """异步启动Telegram机器人"""
+async def init_bot():
+    """初始化 Telegram 机器人"""
     global bot_app
     setup_logging()
     print(f"[{Config.get_timestamp()}] 检查环境变量: BOT_TOKEN={Config.BOT_TOKEN}, RENDER_EXTERNAL_URL={Config.RENDER_EXTERNAL_URL}")
@@ -58,14 +58,14 @@ async def start_bot():
             url=webhook_url,
             allowed_updates=Update.ALL_TYPES
         )
-        print(f"[{Config.get_timestamp()}] 机器人Webhook启动")
+        print(f"[{Config.get_timestamp()}] 机器人Webhook初始化完成")
     except Exception as e:
         print(f"[{Config.get_timestamp()}] Webhook设置失败: {str(e)}")
 
-if __name__ == "__main__":
+# 在应用启动时初始化机器人
+loop = asyncio.get_event_loop()
+loop.run_until_complete(init_bot())
+
+if name == "__main__":
     register_api_routes(app)  # 注册API路由
-    setup_logging()
-    print(f"[{Config.get_timestamp()}] 启动Flask服务，端口 {Config.FLASK_PORT}")
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(start_bot())
-    app.run(host="0.0.0.0", port=Config.FLASK_PORT)  # 本地运行
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))  # 本地运行
