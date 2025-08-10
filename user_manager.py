@@ -1,6 +1,8 @@
 # user_manager.py
 from telegram.ext import ContextTypes
 from config import Config
+import re
+from datetime import datetime
 
 user_history = {}
 operating_groups = {"private": {}}
@@ -13,14 +15,14 @@ async def welcome_new_member(update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = str(update.message.chat_id)
     if chat_id not in user_history:
         user_history[chat_id] = {}
-    
+
     for member in update.message.new_chat_members:
         user_id = str(member.id)
         username = member.username
         first_name = member.first_name.strip() if member.first_name else None
         nickname = first_name or username or "新朋友"
         timestamp = Config.get_timestamp()
-        
+
         user_history[chat_id][user_id] = {"username": username, "first_name": first_name}
         await context.bot.send_message(
             chat_id=chat_id,
@@ -55,7 +57,7 @@ async def handle_message(update, context):
     first_name = update.message.from_user.first_name.strip() if update.message.from_user.first_name else None
     operator_name = first_name or username or "未知用户"
     timestamp = Config.get_timestamp()
-    
+
     print(f"[{timestamp}] 收到消息: '{message_text}' 从用户 {user_id}, username: {username}, chat_id: {chat_id}")
 
     # 初始化群组数据
@@ -80,12 +82,12 @@ async def handle_message(update, context):
         old_username = old_data["username"]
         old_first_name = old_data["first_name"]
         formatted_time = datetime.now(Config.TIMEZONE).strftime("%Y年%m月%d日 %H:%M")
-    if username and username != old_username and first_name == old_first_name:
-                warning = f"⚠️防骗提示⚠️ ({first_name}) 的用户名不一致\n之前用户名：@{old_username}\n现在用户名：@{username}\n修改时间：{formatted_time}\n请注意查证‼️"
+        if username and username != old_username and first_name == old_first_name:
+            warning = f"⚠️防骗提示⚠️ ({first_name}) 的用户名不一致\n之前用户名：@{old_username}\n现在用户名：@{username}\n修改时间：{formatted_time}\n请注意查证‼️"
             await context.bot.send_message(chat_id=chat_id, text=warning)
             print(f"[{timestamp}] 用户名变更警告: {first_name}, 之前 @{old_username}, 现在 @{username}")
         elif first_name and first_name != old_first_name and username == old_username:
-                warning = f"⚠️防骗提示⚠️ (@{username}) 的昵称不一致\n之前昵称：{old_first_name}\n现在昵称：{first_name}\n修改时间：{formatted_time}\n请注意查证‼️"
+            warning = f"⚠️防骗提示⚠️ (@{username}) 的昵称不一致\n之前昵称：{old_first_name}\n现在昵称：{first_name}\n修改时间：{formatted_time}\n请注意查证‼️"
             await context.bot.send_message(chat_id=chat_id, text=warning)
             print(f"[{timestamp}] 昵称变更警告: @{username}, 之前 {old_first_name}, 现在 {first_name}")
 
@@ -117,17 +119,17 @@ async def handle_message(update, context):
             transactions[chat_id].clear()
             is_accounting_enabled[chat_id] = True
             await context.bot.send_message(chat_id=chat_id, text="欢迎使用 winpay小秘书，入金叫卡找winpay，是你最好的选择")
-    
+
     elif message_text == "停止记账":
         if is_operator:
             is_accounting_enabled[chat_id] = False
             await context.bot.send_message(chat_id=chat_id, text="已暂停记账功能")
-    
+
     elif message_text == "恢复记账":
         if is_operator:
             is_accounting_enabled[chat_id] = True
             await context.bot.send_message(chat_id=chat_id, text="记账功能已恢复")
-    
+
     elif message_text == "说明":
         help_text = """
 可用指令：
@@ -146,7 +148,7 @@ async def handle_message(update, context):
 查看操作员：操作员列表
         """
         await context.bot.send_message(chat_id=chat_id, text=help_text)
-    
+
     elif (message_text.startswith("入款") or message_text.startswith("+")) and message_text != "+0":
         if is_operator and is_accounting_enabled.get(chat_id, True):
             transaction = parse_transaction(message_text, chat_id, operator_name, update.message.date, exchange_rates)
@@ -155,7 +157,7 @@ async def handle_message(update, context):
                 await handle_bill(update, context, exchange_rates)
             else:
                 await context.bot.send_message(chat_id=chat_id, text="请输入正确金额，例如：入款1000 或 +1000 或 +100u")
-    
+
     elif message_text.startswith("下发"):
         if is_operator and is_accounting_enabled.get(chat_id, True):
             transaction = parse_transaction(message_text, chat_id, operator_name, update.message.date, exchange_rates)
@@ -164,18 +166,18 @@ async def handle_message(update, context):
                 await handle_bill(update, context, exchange_rates)
             else:
                 await context.bot.send_message(chat_id=chat_id, text="请输入正确金额，例如：下发500 或 下发50u")
-    
+
     elif message_text.startswith("设置操作员"):
         if is_operator:
             operator = message_text.replace("设置操作员", "").strip()
             if operator.startswith("@"):
                 operator = operator[1:]
                 operating_groups[chat_id][operator] = True
-operating_groups["private"][operator] = True
+                operating_groups["private"][operator] = True
                 await context.bot.send_message(chat_id=chat_id, text=f"已将 @{operator} 设置为操作员")
             else:
                 await context.bot.send_message(chat_id=chat_id, text="请使用格式：设置操作员 @用户名")
-    
+
     elif message_text.startswith("删除操作员"):
         if is_operator:
             operator = message_text.replace("删除操作员", "").strip()
@@ -190,7 +192,7 @@ operating_groups["private"][operator] = True
                     await context.bot.send_message(chat_id=chat_id, text=f"@{operator} 不是当前群组的操作员")
             else:
                 await context.bot.send_message(chat_id=chat_id, text="请使用格式：删除操作员 @用户名")
-    
+
     elif message_text.startswith("设置入款汇率"):
         if is_operator and is_accounting_enabled.get(chat_id, True):
             try:
@@ -199,7 +201,7 @@ operating_groups["private"][operator] = True
                 await context.bot.send_message(chat_id=chat_id, text=f"设置成功入款汇率 {format_exchange_rate(exchange_rates[chat_id]['deposit'])}")
             except ValueError:
                 await context.bot.send_message(chat_id=chat_id, text="请输入正确汇率，例如：设置入款汇率0.98")
-    
+
     elif message_text.startswith("设置入款费率"):
         if is_operator and is_accounting_enabled.get(chat_id, True):
             try:
@@ -208,7 +210,7 @@ operating_groups["private"][operator] = True
                 await context.bot.send_message(chat_id=chat_id, text=f"设置成功入款费率 {int(rate*100)}%")
             except ValueError:
                 await context.bot.send_message(chat_id=chat_id, text="请输入正确费率，例如：设置入款费率8")
-    
+
     elif message_text.startswith("设置下发汇率"):
         if is_operator and is_accounting_enabled.get(chat_id, True):
             try:
@@ -217,7 +219,7 @@ operating_groups["private"][operator] = True
                 await context.bot.send_message(chat_id=chat_id, text=f"设置成功下发汇率 {format_exchange_rate(exchange_rates[chat_id]['withdraw'])}")
             except ValueError:
                 await context.bot.send_message(chat_id=chat_id, text="请输入正确汇率，例如：设置下发汇率1.25")
-    
+
     elif message_text.startswith("设置下发费率"):
         if is_operator and is_accounting_enabled.get(chat_id, True):
             try:
@@ -226,10 +228,10 @@ operating_groups["private"][operator] = True
                 await context.bot.send_message(chat_id=chat_id, text=f"设置成功下发费率 {int(rate*100)}%")
             except ValueError:
                 await context.bot.send_message(chat_id=chat_id, text="请输入正确费率，例如：设置下发费率8")
-    
+
     elif message_text == "账单" or message_text == "+0":
         await handle_bill(update, context, exchange_rates)
-    
+
     elif message_text == "删除":
         if is_operator and is_accounting_enabled.get(chat_id, True):
             if update.message.reply_to_message:
@@ -242,8 +244,7 @@ operating_groups["private"][operator] = True
                     for t in transactions[chat_id][:]:
                         if t.startswith("入款"):
                             t_amount = float(t.split(" -> ")[0].split()[1].rstrip('u'))
-                            t_has_u = t.
-                          split()[1].endswith('u')
+                            t_has_u = t.split()[1].endswith('u')
                             if t_amount == amount and has_u == t_has_u:
                                 transactions[chat_id].remove(t)
                                 await context.bot.send_message(chat_id=chat_id, text=f"入款 {format_amount(amount)}{'u' if has_u else ''} 已被撤销")
@@ -263,23 +264,23 @@ operating_groups["private"][operator] = True
                                 await handle_bill(update, context, exchange_rates)
                                 return
             await context.bot.send_message(chat_id=chat_id, text="无法撤销此消息，请确保回复正确的入款或下发记录")
-    
+
     elif message_text == "删除账单":
         if is_operator and is_accounting_enabled.get(chat_id, True):
             transactions[chat_id].clear()
             await context.bot.send_message(chat_id=chat_id, text="当前账单已结算💰，重新开始记账")
-    
+
     elif message_text == "日切" and username == Config.INITIAL_ADMIN_USERNAME:
         if is_operator and is_accounting_enabled.get(chat_id, True):
             transactions[chat_id].clear()
             await context.bot.send_message(chat_id=chat_id, text="交易记录已清空")
-    
+
     elif message_text == "操作员列表":
         if is_operator:
             op_list = ", ".join([f"@{op}" for op in operating_groups.get(chat_id, {})])
             private_op_list = ", ".join([f"@{op}" for op in operating_groups.get("private", {})]) if "private" in operating_groups else "无"
             await context.bot.send_message(chat_id=chat_id, text=f"当前群组操作员列表: {op_list if op_list else '无'}\n私聊操作员列表: {private_op_list}")
-    
+
     elif re.match(r'^[T][a-km-zA-HJ-NP-Z1-9]{33}$', message_text):
         if is_accounting_enabled.get(chat_id, True):
             current_user = f"@{username}" if username else "未知用户"
@@ -290,6 +291,6 @@ operating_groups["private"][operator] = True
                 chat_id=chat_id,
                 text=f"{message_text}\n验证次数：{address_verify_count[chat_id]['count']}\n本次发送人：{current_user}\n上次发送人：{last_user}"
             )
-    
+
     elif update.message.chat.type == "private":
         await handle_group_commands(update, context, message_text, chat_id, username, is_operator)
