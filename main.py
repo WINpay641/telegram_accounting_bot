@@ -65,6 +65,6 @@ def init_bot():
 # 在应用启动时初始化机器人
 init_bot()
 
-if name == "__main__":
+if __name__ == "__main__":
     register_api_routes(app)  # 注册API路由
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))  # 本地运行
