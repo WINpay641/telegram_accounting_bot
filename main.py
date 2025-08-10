@@ -64,7 +64,7 @@ def run_bot():
     print(f"[{Config.get_timestamp()}] 机器人Webhook启动，端口 {Config.BOT_PORT}")
     loop.run_forever()
 
-if name == "__main__":
+if __name__ == "__main__":
     register_api_routes(app)  # 注册API路由
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.start()
