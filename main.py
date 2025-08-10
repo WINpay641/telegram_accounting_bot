@@ -3,7 +3,7 @@ import threading
 import asyncio
 from flask import Flask, request
 from flask_cors import CORS
-from telegram.ext import ApplicationBuilder, MessageHandler, filters, Dispatcher
+from telegram.ext import ApplicationBuilder, MessageHandler, filters
 from telegram import Update
 from dotenv import load_dotenv
 import os
@@ -46,23 +46,20 @@ def run_flask():
     options = {
         'bind': f'0.0.0.0:{flask_port}',
         'workers': 2,
-        'timeout': 120,
+        'timeout': 300,  # 增加超时时间
         'accesslog': '-',
         'errorlog': '-',
     }
     FlaskApplication(app, options).run()
 
-async def process_webhook_update(update, context):
-    """处理 Webhook 更新的异步函数"""
-    await bot_app.process_update(update)
-
 @app.route(f"/{os.getenv('BOT_TOKEN')}", methods=["POST"])
 async def webhook():
     """处理 Telegram Webhook 请求"""
+    global bot_app
     try:
         update = Update.de_json(request.get_json(force=True), bot_app.bot)
         print(f"[{Config.get_timestamp()}] 收到Webhook请求: {request.get_json()}")
-        await process_webhook_update(update, bot_app)
+        await bot_app.process_update(update)
         return "", 200
     except Exception as e:
         print(f"[{Config.get_timestamp()}] Webhook处理错误: {str(e)}")
@@ -95,7 +92,7 @@ def run_bot():
         print(f"[{Config.get_timestamp()}] Webhook设置失败: {str(e)}")
     loop.run_forever()
 
-if __name__ == "__main__":
+if name == "__main__":
     register_api_routes(app)  # 注册API路由
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.start()
