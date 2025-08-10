@@ -52,19 +52,28 @@ def run_bot():
     setup_logging()
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    app_bot = ApplicationBuilder().token(Config.BOT_TOKEN).build()
-    app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app_bot.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_new_member))
-    app_bot.run_webhook(
-        listen="0.0.0.0",
-        port=Config.BOT_PORT,
-        url_path=f"/{Config.BOT_TOKEN}",
-        webhook_url=f"{Config.RENDER_EXTERNAL_URL}/{Config.BOT_TOKEN}"
-    )
-    print(f"[{Config.get_timestamp()}] 机器人Webhook启动，端口 {Config.BOT_PORT}")
+    print(f"[{Config.get_timestamp()}] 检查环境变量: BOT_TOKEN={Config.BOT_TOKEN}, RENDER_EXTERNAL_URL={Config.RENDER_EXTERNAL_URL}")
+    if not Config.BOT_TOKEN or not Config.RENDER_EXTERNAL_URL:
+        print(f"[{Config.get_timestamp()}] 错误: BOT_TOKEN 或 RENDER_EXTERNAL_URL 未设置")
+        return
+    try:
+        app_bot = ApplicationBuilder().token(Config.BOT_TOKEN).build()
+        app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        app_bot.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_new_member))
+        webhook_url = f"{Config.RENDER_EXTERNAL_URL}/{Config.BOT_TOKEN}"
+        print(f"[{Config.get_timestamp()}] 尝试设置Webhook: {webhook_url}")
+        app_bot.run_webhook(
+            listen="0.0.0.0",
+            port=Config.BOT_PORT,
+            url_path=f"/{Config.BOT_TOKEN}",
+            webhook_url=webhook_url
+        )
+        print(f"[{Config.get_timestamp()}] 机器人Webhook启动，端口 {Config.BOT_PORT}")
+    except Exception as e:
+        print(f"[{Config.get_timestamp()}] Webhook设置失败: {str(e)}")
     loop.run_forever()
 
-if __name__ == "__main__":
+if name == "__main__":
     register_api_routes(app)  # 注册API路由
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.start()
