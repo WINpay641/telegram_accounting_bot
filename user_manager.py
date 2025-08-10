@@ -81,11 +81,11 @@ async def handle_message(update, context):
         old_first_name = old_data["first_name"]
         formatted_time = datetime.now(Config.TIMEZONE).strftime("%Y年%m月%d日 %H:%M")
     if username and username != old_username and first_name == old_first_name:
-        warning = f"⚠️防骗提示⚠️ ({first_name}) 的用户名不一致\n之前用户名：@{old_username}\n现在用户名：@{username}\n修改时间：{formatted_time}\n请注意查证‼️"
+                warning = f"⚠️防骗提示⚠️ ({first_name}) 的用户名不一致\n之前用户名：@{old_username}\n现在用户名：@{username}\n修改时间：{formatted_time}\n请注意查证‼️"
             await context.bot.send_message(chat_id=chat_id, text=warning)
             print(f"[{timestamp}] 用户名变更警告: {first_name}, 之前 @{old_username}, 现在 @{username}")
         elif first_name and first_name != old_first_name and username == old_username:
-            warning = f"⚠️防骗提示⚠️ (@{username}) 的昵称不一致\n之前昵称：{old_first_name}\n现在昵称：{first_name}\n修改时间：{formatted_time}\n请注意查证‼️"
+                warning = f"⚠️防骗提示⚠️ (@{username}) 的昵称不一致\n之前昵称：{old_first_name}\n现在昵称：{first_name}\n修改时间：{formatted_time}\n请注意查证‼️"
             await context.bot.send_message(chat_id=chat_id, text=warning)
             print(f"[{timestamp}] 昵称变更警告: @{username}, 之前 {old_first_name}, 现在 {first_name}")
 
