@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import pytz
 
 class Config:
-    BOT_TOKEN = os.getenv("BOT_TOKEN", "7908773608:AAFFqLmGkJ9zbsuymQTFzJxy5IyeN1E9M-U")
+    BOT_TOKEN = os.getenv("BOT_TOKEN", "8238427577:AAHhxA2Kv5t9W1dG9sF_2b316hgTM5ULjZc")
     FLASK_PORT = int(os.getenv("FLASK_PORT", 5001))
     BOT_PORT = int(os.getenv("PORT", 10000))
     RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "")
