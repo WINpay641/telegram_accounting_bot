@@ -1,9 +1,9 @@
 # main.py
-import asyncio
 from flask import Flask, request
 from flask_cors import CORS
 from telegram.ext import ApplicationBuilder, MessageHandler, filters
 from telegram import Update
+from telegram.error import TelegramError
 from dotenv import load_dotenv
 import os
 import json
@@ -23,13 +23,14 @@ CORS(app)
 bot_app = None
 
 @app.route(f"/{os.getenv('BOT_TOKEN')}", methods=["POST"])
-async def webhook():
+def webhook():
     """处理 Telegram Webhook 请求"""
     global bot_app
     try:
         update = Update.de_json(request.get_json(force=True), bot_app.bot)
         print(f"[{Config.get_timestamp()}] 收到Webhook请求: {request.get_json()}")
-        await bot_app.process_update(update)
+        # 使用 run_async 在同步环境中运行异步处理
+        bot_app.run_async(bot_app.process_update(update)).result()
         return "", 200
     except Exception as e:
         print(f"[{Config.get_timestamp()}] Webhook处理错误: {str(e)}")
@@ -40,7 +41,7 @@ def health():
     """健康检查端点"""
     return "OK", 200
 
-async def init_bot():
+def init_bot():
     """初始化 Telegram 机器人"""
     global bot_app
     setup_logging()
@@ -54,18 +55,17 @@ async def init_bot():
         bot_app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_new_member))
         webhook_url = f"{Config.RENDER_EXTERNAL_URL}/{Config.BOT_TOKEN}"
         print(f"[{Config.get_timestamp()}] 尝试设置Webhook: {webhook_url}")
-        await bot_app.bot.set_webhook(
+        bot_app.bot.set_webhook(
             url=webhook_url,
             allowed_updates=Update.ALL_TYPES
         )
         print(f"[{Config.get_timestamp()}] 机器人Webhook初始化完成")
-    except Exception as e:
+    except TelegramError as e:
         print(f"[{Config.get_timestamp()}] Webhook设置失败: {str(e)}")
 
 # 在应用启动时初始化机器人
-loop = asyncio.get_event_loop()
-loop.run_until_complete(init_bot())
+init_bot()
 
-if __name__ == "__main__":
+if name == "__main__":
     register_api_routes(app)  # 注册API路由
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))  # 本地运行
