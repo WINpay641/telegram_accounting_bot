@@ -29,7 +29,6 @@ def webhook():
     try:
         update = Update.de_json(request.get_json(force=True), bot_app.bot)
         print(f"[{Config.get_timestamp()}] 收到Webhook请求: {request.get_json()}")
-        # 使用 run_async 在同步环境中运行异步处理
         bot_app.run_async(bot_app.process_update(update)).result()
         return "", 200
     except Exception as e:
