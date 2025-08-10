@@ -92,7 +92,7 @@ def run_bot():
         print(f"[{Config.get_timestamp()}] Webhook设置失败: {str(e)}")
     loop.run_forever()
 
-if name == "__main__":
+if __name__ == "__main__":
     register_api_routes(app)  # 注册API路由
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.start()
